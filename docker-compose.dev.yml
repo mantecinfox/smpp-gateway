@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # Banco de dados PostgreSQL para desenvolvimento
+  postgres:
+    image: postgres:15-alpine
+    container_name: smpp-postgres-dev
+    environment:
+      POSTGRES_DB: smpp_admin_dev
+      POSTGRES_USER: smpp_user_dev
+      POSTGRES_PASSWORD: dev_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - smpp-dev-network
+    restart: unless-stopped
+
+  # Redis para desenvolvimento
+  redis:
+    image: redis:7-alpine
+    container_name: smpp-redis-dev
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - smpp-dev-network
+    restart: unless-stopped
+
+  # Backend em modo desenvolvimento
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: smpp-backend-dev
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=smpp_admin_dev
+      - DB_USER=smpp_user_dev
+      - DB_PASSWORD=dev_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SMPP_HOST=198.54.166.74
+      - SMPP_PORT=2875
+      - SMPP_SYSTEM_ID=WhatsInfo_otp
+      - SMPP_PASSWORD=juebkiur
+      - API_PORT=3000
+      - JWT_SECRET=dev_jwt_secret
+      - WEBHOOK_SECRET=dev_webhook_secret
+      - LOG_LEVEL=debug
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - ./logs:/app/logs
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - smpp-dev-network
+    restart: unless-stopped
+    command: npm run dev
+
+  # Frontend em modo desenvolvimento
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: smpp-frontend-dev
+    environment:
+      - REACT_APP_API_URL=http://localhost:3000
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - smpp-dev-network
+    restart: unless-stopped
+    command: npm start
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  smpp-dev-network:
+    driver: bridge

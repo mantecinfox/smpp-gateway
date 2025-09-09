@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smpp-admin-config
+  namespace: smpp-admin
+data:
+  NODE_ENV: "production"
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "smpp_admin"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  API_PORT: "3000"
+  LOG_LEVEL: "info"

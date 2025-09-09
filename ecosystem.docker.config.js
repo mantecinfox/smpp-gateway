@@ -1,15 +1,11 @@
 module.exports = {
   apps: [{
     name: 'smpp-admin-backend',
-    script: './backend/server.js',
+    script: './server.js',
     instances: 1,
     exec_mode: 'fork',
     env: {
       NODE_ENV: 'production',
-      PORT: 3000
-    },
-    env_development: {
-      NODE_ENV: 'development',
       PORT: 3000
     },
     // Configurações de logs
@@ -44,9 +40,6 @@ module.exports = {
     
     // Configurações de graceful shutdown
     kill_retry_time: 100,
-    
-    // Configurações de cron
-    cron_restart: '0 2 * * *', // Restart diário às 2h
     
     // Configurações de variáveis de ambiente
     env_file: '.env'

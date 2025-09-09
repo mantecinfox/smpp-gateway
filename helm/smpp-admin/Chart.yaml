@@ -1,0 +1,27 @@
+apiVersion: v2
+name: smpp-admin
+description: Sistema de Administração SMPP
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/smpp-admin/smpp-admin
+sources:
+  - https://github.com/smpp-admin/smpp-admin
+maintainers:
+  - name: SMPP Admin Team
+    email: team@smpp-admin.com
+keywords:
+  - smpp
+  - sms
+  - admin
+  - nodejs
+  - postgresql
+  - redis
+dependencies:
+  - name: postgresql
+    version: 12.1.2
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: 17.3.7
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
