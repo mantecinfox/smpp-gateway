@@ -1,0 +1,85 @@
+# Arquivo de exemplo de variáveis do Terraform
+# Copie este arquivo para terraform.tfvars e configure as variáveis
+
+# Configurações básicas
+aws_region   = "us-east-1"
+environment  = "prod"
+project_name = "smpp-admin"
+
+# Senhas (configure com valores seguros)
+db_password    = "sua_senha_do_banco_aqui"
+redis_password = "sua_senha_do_redis_aqui"
+
+# Configurações de instâncias
+instance_type      = "t3.micro"
+db_instance_class  = "db.t3.micro"
+redis_node_type    = "cache.t3.micro"
+
+# Configurações de rede
+vpc_cidr = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.20.0/24"]
+
+# Configurações de segurança
+allowed_cidr_blocks = ["0.0.0.0/0"]
+enable_encryption   = true
+
+# Configurações de backup
+backup_retention_days = 7
+
+# Configurações de monitoramento
+enable_monitoring = false
+log_retention_days = 30
+
+# Configurações de segurança avançada
+enable_cloudtrail     = false
+enable_config         = false
+enable_guardduty      = false
+enable_security_hub   = false
+enable_inspector      = false
+enable_waf            = false
+enable_shield         = false
+
+# Configurações de certificado SSL
+enable_certificate_manager = false
+domain_name                = ""
+certificate_arn            = ""
+
+# Configurações de CDN
+enable_cloudfront = false
+
+# Configurações de armazenamento
+enable_s3         = false
+s3_bucket_name    = ""
+enable_efs        = false
+enable_efs_backup = false
+
+# Configurações de auto scaling
+enable_autoscaling        = false
+min_capacity              = 1
+max_capacity              = 10
+target_cpu_utilization    = 70
+target_memory_utilization = 80
+
+# Configurações de instâncias spot
+enable_spot_instances = false
+spot_price           = "0.05"
+
+# Configurações de grupos de posicionamento
+enable_placement_groups = false
+placement_strategy      = "cluster"
+
+# Configurações de conectividade
+enable_nat_gateway = false
+enable_vpn_gateway = false
+
+# Configurações de logs
+enable_flow_logs = false
+
+# Tags adicionais
+tags = {
+  Project     = "SMPP Admin"
+  Environment = "Production"
+  Owner       = "DevOps Team"
+  CostCenter  = "IT"
+}

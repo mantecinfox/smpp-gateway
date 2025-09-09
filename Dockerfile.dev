@@ -1,0 +1,35 @@
+# Dockerfile para desenvolvimento
+FROM node:20-alpine
+
+# Instalar dependências do sistema
+RUN apk add --no-cache \
+    postgresql-client \
+    redis \
+    curl \
+    git
+
+# Criar usuário da aplicação
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S smpp -u 1001
+
+# Configurar diretório de trabalho
+WORKDIR /app
+
+# Instalar dependências do backend
+COPY backend/package*.json ./
+RUN npm install
+
+# Copiar código do backend
+COPY backend/ ./
+
+# Criar diretórios necessários
+RUN mkdir -p logs && chown -R smpp:nodejs /app
+
+# Mudar para usuário da aplicação
+USER smpp
+
+# Expor porta
+EXPOSE 3000
+
+# Comando de desenvolvimento
+CMD ["npm", "run", "dev"]

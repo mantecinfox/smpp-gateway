@@ -1,0 +1,132 @@
+# Configurações padrão do Helm Chart
+
+# Configurações da aplicação
+app:
+  name: smpp-admin
+  image:
+    repository: smpp-admin
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Configurações do PostgreSQL
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: postgres
+    username: smpp_user
+    password: smpp_password_2024
+    database: smpp_admin
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+# Configurações do Redis
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: redis_password
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Configurações do Nginx
+nginx:
+  enabled: true
+  service:
+    type: LoadBalancer
+    port: 80
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Configurações de monitoramento
+monitoring:
+  enabled: false
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+# Configurações de backup
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: "7d"
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Configurações de segurança
+security:
+  podSecurityContext:
+    fsGroup: 1001
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1001
+    capabilities:
+      drop:
+        - ALL
+
+# Configurações de rede
+networkPolicy:
+  enabled: false
+
+# Configurações de ingress
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: smpp-admin.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Configurações de autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
