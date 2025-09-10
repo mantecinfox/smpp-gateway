@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block page_title %}DIDs{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">DIDs</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Lista de DIDs</h3>
+                <div class="card-tools">
+                    <a href="{{ url_for('new_phone_number') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Novo DID
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="phoneNumbersTable" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Status</th>
+                                <th>Criado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for phone_number in phone_numbers %}
+                            <tr>
+                                <td>{{ phone_number.id }}</td>
+                                <td>
+                                    <strong>{{ phone_number.number }}</strong>
+                                    <br><small class="text-muted">DID</small>
+                                </td>
+                                <td>
+                                    {% if phone_number.client %}
+                                        <a href="{{ url_for('edit_client', client_id=phone_number.client.id) }}">
+                                            {{ phone_number.client.name }}
+                                        </a>
+                                        <br><small class="text-muted">{{ phone_number.client.email }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Sem cliente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if phone_number.is_active %}
+                                        <span class="badge badge-success">Ativo</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ phone_number.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="showDIDStats({{ phone_number.id }})">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="editDID({{ phone_number.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Estatísticas do DID -->
+<div class="modal fade" id="didStatsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Estatísticas do DID</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="didStatsContent">
+                    <!-- Conteúdo será carregado via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#phoneNumbersTable').DataTable({
+        "responsive": true,
+        "lengthChange": false,
+        "autoWidth": false,
+        "order": [[0, "desc"]],
+        "language": {
+            "url": "https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json"
+        }
+    });
+});
+
+function showDIDStats(didId) {
+    $('#didStatsContent').html(`
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    `);
+    
+    $('#didStatsModal').modal('show');
+    
+    // Simula carregamento de estatísticas
+    setTimeout(function() {
+        $('#didStatsContent').html(`
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Informações do DID</h6>
+                    <p><strong>ID:</strong> ${didId}</p>
+                    <p><strong>Número:</strong> +55 11 99999-9999</p>
+                    <p><strong>Cliente:</strong> Cliente Exemplo</p>
+                    <p><strong>Status:</strong> <span class="badge badge-success">Ativo</span></p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Estatísticas (Últimos 30 dias)</h6>
+                    <div class="info-box">
+                        <span class="info-box-icon bg-info"><i class="fas fa-envelope"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total de Mensagens</span>
+                            <span class="info-box-number">1,234</span>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <span class="info-box-icon bg-success"><i class="fas fa-check"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Entregues</span>
+                            <span class="info-box-number">1,200</span>
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <span class="info-box-icon bg-warning"><i class="fas fa-clock"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Pendentes</span>
+                            <span class="info-box-number">34</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <h6>Mensagens por Serviço</h6>
+            <canvas id="didServiceChart" width="400" height="200"></canvas>
+        `);
+        
+        // Gráfico de serviços para o DID
+        const ctx = document.getElementById('didServiceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['WhatsApp', 'Gmail', 'Instagram', 'Outros'],
+                datasets: [{
+                    data: [45, 25, 20, 10],
+                    backgroundColor: ['#25D366', '#EA4335', '#E4405F', '#6C757D']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }, 1000);
+}
+
+function editDID(didId) {
+    // Implementar edição de DID
+    alert('Funcionalidade de edição será implementada em breve.');
+}
+</script>
+{% endblock %}

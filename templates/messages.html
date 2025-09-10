@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block page_title %}Mensagens{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Mensagens</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Lista de Mensagens</h3>
+                <div class="card-tools">
+                    <button class="btn btn-success btn-sm" onclick="refreshMessages()">
+                        <i class="fas fa-sync"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="messagesTable" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Origem</th>
+                                <th>Destino</th>
+                                <th>Mensagem</th>
+                                <th>Serviço</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for message in messages.items %}
+                            <tr>
+                                <td>
+                                    <code>{{ message.message_id[:12] }}...</code>
+                                </td>
+                                <td>
+                                    <strong>{{ message.source_addr }}</strong>
+                                </td>
+                                <td>
+                                    <strong>{{ message.destination_addr }}</strong>
+                                </td>
+                                <td>
+                                    <div class="message-preview">
+                                        {{ message.short_message[:50] }}{{ '...' if message.short_message|length > 50 else '' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if message.service %}
+                                        <span class="badge badge-info">{{ message.service.name }}</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Não classificado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if message.message_type == 'MO' %}
+                                        <span class="badge badge-primary">MO</span>
+                                    {% elif message.message_type == 'DLR' %}
+                                        <span class="badge badge-success">DLR</span>
+                                    {% elif message.message_type == 'SMS' %}
+                                        <span class="badge badge-warning">SMS</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">{{ message.message_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if message.status == 'received' %}
+                                        <span class="badge badge-primary">Recebida</span>
+                                    {% elif message.status == 'processed' %}
+                                        <span class="badge badge-info">Processada</span>
+                                    {% elif message.status == 'classified' %}
+                                        <span class="badge badge-success">Classificada</span>
+                                    {% elif message.status == 'delivered' %}
+                                        <span class="badge badge-success">Entregue</span>
+                                    {% elif message.status == 'failed' %}
+                                        <span class="badge badge-danger">Falhou</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">{{ message.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="showMessageDetails({{ message.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="reclassifyMessage({{ message.id }})">
+                                        <i class="fas fa-sync"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginação -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        Mostrando {{ messages.per_page * (messages.page - 1) + 1 }} a 
+                        {{ messages.per_page * (messages.page - 1) + messages.items|length }} de 
+                        {{ messages.total }} mensagens
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm">
+                            {% if messages.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('messages', page=messages.prev_num) }}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in messages.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != messages.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('messages', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if messages.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('messages', page=messages.next_num) }}">Próximo</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes da Mensagem -->
+<div class="modal fade" id="messageDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes da Mensagem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="messageDetailsContent">
+                    <!-- Conteúdo será carregado via AJAX -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#messagesTable').DataTable({
+        "responsive": true,
+        "lengthChange": false,
+        "autoWidth": false,
+        "order": [[7, "desc"]], // Ordena por data
+        "pageLength": 25,
+        "language": {
+            "url": "https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json"
+        }
+    });
+});
+
+function refreshMessages() {
+    location.reload();
+}
+
+function showMessageDetails(messageId) {
+    $('#messageDetailsContent').html(`
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+    `);
+    
+    $('#messageDetailsModal').modal('show');
+    
+    // Simula carregamento de detalhes
+    setTimeout(function() {
+        $('#messageDetailsContent').html(`
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Informações Básicas</h6>
+                    <p><strong>ID:</strong> msg_${messageId}_${Date.now()}</p>
+                    <p><strong>Origem:</strong> +55 11 99999-9999</p>
+                    <p><strong>Destino:</strong> +55 11 88888-8888</p>
+                    <p><strong>Tipo:</strong> <span class="badge badge-primary">MO</span></p>
+                    <p><strong>Status:</strong> <span class="badge badge-success">Processada</span></p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Classificação</h6>
+                    <p><strong>Serviço:</strong> <span class="badge badge-info">WhatsApp</span></p>
+                    <p><strong>Confiança:</strong> 95%</p>
+                    <p><strong>Padrão:</strong> (?i)(whatsapp|wa\.me)</p>
+                    <p><strong>Processado em:</strong> 2024-01-15 14:30:25</p>
+                </div>
+            </div>
+            <hr>
+            <h6>Conteúdo da Mensagem</h6>
+            <div class="alert alert-light">
+                <strong>Texto completo:</strong><br>
+                Seu código de verificação WhatsApp é: 123456. Não compartilhe com ninguém.
+            </div>
+            <h6>Entregas</h6>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Webhook</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cliente Exemplo</td>
+                            <td>http://exemplo.com/webhook</td>
+                            <td><span class="badge badge-success">Entregue</span></td>
+                            <td>2024-01-15 14:30:30</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `);
+    }, 1000);
+}
+
+function reclassifyMessage(messageId) {
+    if (confirm('Deseja reclassificar esta mensagem?')) {
+        // Implementar reclassificação
+        alert('Funcionalidade de reclassificação será implementada em breve.');
+    }
+}
+
+// Atualiza mensagens a cada 30 segundos
+setInterval(function() {
+    // Atualiza apenas se não estiver em modal
+    if (!$('#messageDetailsModal').hasClass('show')) {
+        location.reload();
+    }
+}, 30000);
+</script>
+{% endblock %}

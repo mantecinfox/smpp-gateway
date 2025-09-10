@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block page_title %}Serviços{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Serviços</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Lista de Serviços</h3>
+                <div class="card-tools">
+                    <a href="{{ url_for('new_service') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Novo Serviço
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="servicesTable" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Descrição</th>
+                                <th>Regex Pattern</th>
+                                <th>Status</th>
+                                <th>Criado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in services %}
+                            <tr>
+                                <td>{{ service.id }}</td>
+                                <td>{{ service.name }}</td>
+                                <td>{{ service.description or '-' }}</td>
+                                <td>
+                                    <code>{{ service.regex_pattern[:50] }}{{ '...' if service.regex_pattern|length > 50 else '' }}</code>
+                                </td>
+                                <td>
+                                    {% if service.is_active %}
+                                        <span class="badge badge-success">Ativo</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ service.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="testRegex('{{ service.regex_pattern }}', '{{ service.name }}')">
+                                        <i class="fas fa-play"></i> Testar
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="editService({{ service.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Teste de Regex -->
+<div class="modal fade" id="testRegexModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Testar Regex - <span id="serviceName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="testMessage">Mensagem de teste:</label>
+                    <textarea class="form-control" id="testMessage" rows="3" placeholder="Digite uma mensagem para testar..."></textarea>
+                </div>
+                <div id="testResult" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="runTest()">Testar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#servicesTable').DataTable({
+        "responsive": true,
+        "lengthChange": false,
+        "autoWidth": false,
+        "order": [[0, "asc"]],
+        "language": {
+            "url": "https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json"
+        }
+    });
+});
+
+let currentRegex = '';
+
+function testRegex(regex, serviceName) {
+    currentRegex = regex;
+    $('#serviceName').text(serviceName);
+    $('#testMessage').val('');
+    $('#testResult').html('');
+    $('#testRegexModal').modal('show');
+}
+
+function runTest() {
+    const message = $('#testMessage').val();
+    const regex = currentRegex;
+    
+    if (!message) {
+        $('#testResult').html('<div class="alert alert-warning">Digite uma mensagem para testar.</div>');
+        return;
+    }
+    
+    try {
+        const regexObj = new RegExp(regex, 'i');
+        const match = message.match(regexObj);
+        
+        if (match) {
+            $('#testResult').html(`
+                <div class="alert alert-success">
+                    <strong>✓ Match encontrado!</strong><br>
+                    <small>Padrão: ${regex}</small><br>
+                    <small>Match: "${match[0]}"</small>
+                </div>
+            `);
+        } else {
+            $('#testResult').html(`
+                <div class="alert alert-danger">
+                    <strong>✗ Nenhum match encontrado</strong><br>
+                    <small>Padrão: ${regex}</small>
+                </div>
+            `);
+        }
+    } catch (e) {
+        $('#testResult').html(`
+            <div class="alert alert-danger">
+                <strong>✗ Erro na regex:</strong><br>
+                <small>${e.message}</small>
+            </div>
+        `);
+    }
+}
+
+function editService(serviceId) {
+    // Implementar edição de serviço
+    alert('Funcionalidade de edição será implementada em breve.');
+}
+</script>
+{% endblock %}

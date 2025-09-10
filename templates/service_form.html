@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block page_title %}Novo Serviço{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('services') }}">Serviços</a></li>
+<li class="breadcrumb-item active">Novo Serviço</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Novo Serviço</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="form-group">
+                        <label for="name">Nome do Serviço *</label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               placeholder="Ex: WhatsApp, Gmail, Instagram...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Descrição</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Descrição do serviço..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="regex_pattern">Padrão Regex *</label>
+                        <input type="text" class="form-control" id="regex_pattern" name="regex_pattern" required
+                               placeholder="Ex: (?i)(whatsapp|wa\.me|whats)">
+                        <small class="form-text text-muted">
+                            Padrão regex para detectar mensagens deste serviço. Use (?i) para case-insensitive.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Serviço ativo
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Criar Serviço
+                        </button>
+                        <a href="{{ url_for('services') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Teste de Regex</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="testMessage">Mensagem de teste:</label>
+                    <textarea class="form-control" id="testMessage" rows="3" 
+                              placeholder="Digite uma mensagem para testar..."></textarea>
+                </div>
+                <button type="button" class="btn btn-info btn-sm" onclick="testRegex()">
+                    <i class="fas fa-play"></i> Testar
+                </button>
+                <div id="testResult" class="mt-3"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Exemplos de Regex</h3>
+            </div>
+            <div class="card-body">
+                <h6>WhatsApp:</h6>
+                <code>(?i)(whatsapp|wa\.me|whats)</code>
+                
+                <h6>Gmail:</h6>
+                <code>(?i)(gmail|google|g\.co)</code>
+                
+                <h6>Instagram:</h6>
+                <code>(?i)(instagram|insta|ig)</code>
+                
+                <h6>Telegram:</h6>
+                <code>(?i)(telegram|t\.me|tg)</code>
+                
+                <h6>Mercado Livre:</h6>
+                <code>(?i)(mercadolivre|mercadolibre|ml\.com)</code>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function testRegex() {
+    const message = $('#testMessage').val();
+    const regex = $('#regex_pattern').val();
+    
+    if (!message || !regex) {
+        $('#testResult').html('<div class="alert alert-warning">Digite uma mensagem e um padrão regex para testar.</div>');
+        return;
+    }
+    
+    try {
+        const regexObj = new RegExp(regex, 'i');
+        const match = message.match(regexObj);
+        
+        if (match) {
+            $('#testResult').html(`
+                <div class="alert alert-success">
+                    <strong>✓ Match encontrado!</strong><br>
+                    <small>Match: "${match[0]}"</small>
+                </div>
+            `);
+        } else {
+            $('#testResult').html(`
+                <div class="alert alert-danger">
+                    <strong>✗ Nenhum match encontrado</strong>
+                </div>
+            `);
+        }
+    } catch (e) {
+        $('#testResult').html(`
+            <div class="alert alert-danger">
+                <strong>✗ Erro na regex:</strong><br>
+                <small>${e.message}</small>
+            </div>
+        `);
+    }
+}
+
+// Testa automaticamente quando o usuário digita
+$('#regex_pattern, #testMessage').on('input', function() {
+    if ($('#regex_pattern').val() && $('#testMessage').val()) {
+        testRegex();
+    }
+});
+</script>
+{% endblock %}

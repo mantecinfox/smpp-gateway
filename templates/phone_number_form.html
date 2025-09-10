@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block page_title %}Novo DID{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('phone_numbers') }}">DIDs</a></li>
+<li class="breadcrumb-item active">Novo DID</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Novo DID</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="form-group">
+                        <label for="number">Número do DID *</label>
+                        <input type="tel" class="form-control" id="number" name="number" required
+                               placeholder="Ex: 5511999999999" pattern="[0-9]+">
+                        <small class="form-text text-muted">
+                            Número no formato internacional sem caracteres especiais (ex: 5511999999999)
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="client_id">Cliente *</label>
+                        <select class="form-control" id="client_id" name="client_id" required>
+                            <option value="">Selecione um cliente</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}">{{ client.name }} ({{ client.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                DID ativo
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Criar DID
+                        </button>
+                        <a href="{{ url_for('phone_numbers') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Informações sobre DIDs</h3>
+            </div>
+            <div class="card-body">
+                <h6>O que é um DID?</h6>
+                <p>DID (Direct Inward Dialing) é um número telefônico que recebe mensagens SMS e as roteia para o cliente específico.</p>
+                
+                <h6>Como funciona?</h6>
+                <ul>
+                    <li>Mensagens enviadas para o DID são recebidas pelo sistema</li>
+                    <li>O sistema classifica a mensagem por serviço</li>
+                    <li>A mensagem é entregue ao cliente dono do DID</li>
+                    <li>O cliente recebe via webhook (se configurado)</li>
+                </ul>
+                
+                <h6>Formato do número:</h6>
+                <p>Use o formato internacional completo:</p>
+                <ul>
+                    <li><code>5511999999999</code> (Brasil)</li>
+                    <li><code>1234567890</code> (EUA)</li>
+                    <li><code>447700900123</code> (Reino Unido)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Validação de Número</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="testNumber">Teste o formato:</label>
+                    <input type="tel" class="form-control" id="testNumber" 
+                           placeholder="Digite um número para validar">
+                </div>
+                <div id="numberValidation" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function validatePhoneNumber(number) {
+    // Remove todos os caracteres não numéricos
+    const cleanNumber = number.replace(/\D/g, '');
+    
+    // Validações básicas
+    if (cleanNumber.length < 10) {
+        return { valid: false, message: 'Número muito curto (mínimo 10 dígitos)' };
+    }
+    
+    if (cleanNumber.length > 15) {
+        return { valid: false, message: 'Número muito longo (máximo 15 dígitos)' };
+    }
+    
+    // Verifica se contém apenas números
+    if (!/^\d+$/.test(cleanNumber)) {
+        return { valid: false, message: 'Apenas números são permitidos' };
+    }
+    
+    return { valid: true, message: 'Formato válido', cleanNumber: cleanNumber };
+}
+
+$('#testNumber').on('input', function() {
+    const number = $(this).val();
+    const validation = validatePhoneNumber(number);
+    
+    if (validation.valid) {
+        $('#numberValidation').html(`
+            <div class="alert alert-success">
+                <strong>✓ Válido!</strong><br>
+                <small>Número limpo: ${validation.cleanNumber}</small>
+            </div>
+        `);
+    } else {
+        $('#numberValidation').html(`
+            <div class="alert alert-danger">
+                <strong>✗ Inválido:</strong><br>
+                <small>${validation.message}</small>
+            </div>
+        `);
+    }
+});
+
+// Validação do formulário
+$('#number').on('input', function() {
+    const number = $(this).val();
+    const validation = validatePhoneNumber(number);
+    
+    if (validation.valid) {
+        $(this).removeClass('is-invalid').addClass('is-valid');
+    } else {
+        $(this).removeClass('is-valid').addClass('is-invalid');
+    }
+});
+
+// Formatação automática do número
+$('#number').on('blur', function() {
+    const validation = validatePhoneNumber($(this).val());
+    if (validation.valid) {
+        $(this).val(validation.cleanNumber);
+    }
+});
+</script>
+{% endblock %}
