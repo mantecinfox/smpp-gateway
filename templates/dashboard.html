@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<!-- Info boxes -->
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{{ total_messages }}</h3>
+                <p>Total de Mensagens</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <a href="{{ url_for('messages') }}" class="small-box-footer">
+                Mais informações <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>{{ total_clients }}</h3>
+                <p>Clientes Ativos</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <a href="{{ url_for('clients') }}" class="small-box-footer">
+                Mais informações <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>{{ total_services }}</h3>
+                <p>Serviços Configurados</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <a href="{{ url_for('services') }}" class="small-box-footer">
+                Mais informações <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>{{ total_phone_numbers }}</h3>
+                <p>DIDs Configurados</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-phone"></i>
+            </div>
+            <a href="{{ url_for('phone_numbers') }}" class="small-box-footer">
+                Mais informações <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Mensagens Recentes -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Mensagens Recentes</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Origem</th>
+                                <th>Destino</th>
+                                <th>Serviço</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for message in recent_messages %}
+                            <tr>
+                                <td>{{ message.message_id[:10] }}...</td>
+                                <td>{{ message.source_addr }}</td>
+                                <td>{{ message.destination_addr }}</td>
+                                <td>
+                                    {% if message.service %}
+                                        <span class="badge badge-info">{{ message.service.name }}</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Não classificado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if message.status == 'received' %}
+                                        <span class="badge badge-primary">Recebida</span>
+                                    {% elif message.status == 'processed' %}
+                                        <span class="badge badge-success">Processada</span>
+                                    {% elif message.status == 'delivered' %}
+                                        <span class="badge badge-success">Entregue</span>
+                                    {% elif message.status == 'failed' %}
+                                        <span class="badge badge-danger">Falhou</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">{{ message.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ message.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas por Serviço -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Mensagens por Serviço</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="serviceChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de Atividade -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Atividade do Sistema</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="activityChart" width="400" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Gráfico de serviços
+const serviceCtx = document.getElementById('serviceChart').getContext('2d');
+const serviceChart = new Chart(serviceCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for stat in service_stats %}
+                '{{ stat.name }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for stat in service_stats %}
+                    {{ stat.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF',
+                '#FF9F40',
+                '#FF6384',
+                '#C9CBCF',
+                '#4BC0C0',
+                '#FF6384'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Gráfico de atividade (simulado)
+const activityCtx = document.getElementById('activityChart').getContext('2d');
+const activityChart = new Chart(activityCtx, {
+    type: 'line',
+    data: {
+        labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+        datasets: [{
+            label: 'Mensagens por hora',
+            data: [12, 19, 3, 5, 2, 3],
+            borderColor: '#36A2EB',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Função para atualizar dashboard em tempo real
+function updateDashboard(data) {
+    // Atualiza contadores
+    if (data.type === 'new_message') {
+        // Recarrega a página para mostrar nova mensagem
+        location.reload();
+    }
+}
+
+// Atualiza dashboard a cada 30 segundos
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}
